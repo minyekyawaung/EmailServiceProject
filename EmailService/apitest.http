@@ -1,0 +1,16 @@
+
+###
+POST https://localhost:7270/EmailService/SendEmail HTTP/1.1
+content-type: application/json
+
+{
+   
+    "Title": "check1",
+    "Body": "check1",
+    "Address": "monyekyawaung@gmail.com"
+ 
+    
+} 
+
+
+
