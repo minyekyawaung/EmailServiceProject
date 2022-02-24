@@ -82,10 +82,83 @@ public class EmailServiceController : ControllerBase
              });
              */
             
-
+           
             var result = await _client.GetResponse<ResultData>(contract);
             var data = result.Message.response.rows.toList<emails>();
             return   (Response)result.Message.response;
+            }
+            catch (IOException e)
+            {
+                throw;
+            }
+        
+        }
+
+
+        [HttpPost]
+        public async Task<EmailService.Response> MultiSendEmail(emails _emails)
+        {
+          
+            try
+            {
+            
+            string Email = _config["Email"];
+            string Password = _config["Password"];
+
+            MailMessage msg = new MailMessage();
+
+            msg.From = new MailAddress(Email);
+            //Adding Multiple recipient email id logic
+            string[] Multi =_emails.Address.Split(','); //spiliting input Email id string with comma(,)
+            foreach (string Multiemailid in Multi)
+            {
+                msg.To.Add(new MailAddress(Multiemailid)); //adding multi reciver's Email Id
+            }
+            msg.To.Add(_emails.Address);
+            msg.Subject = _emails.Title;
+            msg.Body = _emails.Body;
+            //msg.Priority = MailPriority.High;
+
+
+            using (SmtpClient client = new SmtpClient())
+            {
+                client.EnableSsl = true;
+                client.UseDefaultCredentials = false;
+                client.Credentials = new NetworkCredential(Email,Password);
+                client.Host =  _config["Host"];
+                client.Port = Convert.ToInt16(_config["Port"]);
+                client.DeliveryMethod = SmtpDeliveryMethod.Network;
+
+                client.Send(msg);
+            }
+
+            //var result ;
+            var contract = new object();
+            var result = new object();
+            var data = new object();
+
+            foreach (string Multiemailid in Multi)
+            {
+                var newuser = new {
+                                
+                title = _emails.Title,
+                body = _emails.Body,
+                address = Multiemailid
+                
+             
+            };
+            contract = new Query("emails").Insert(newuser).Contract();
+            result = await _client.GetResponse<ResultData>(contract);
+            //data = result.Message.response.rows.toList<emails>();
+
+         
+            }
+          
+            
+            //return   (Response)result.Message.response;
+            return null;
+
+
             }
             catch (IOException e)
             {
