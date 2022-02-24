@@ -96,6 +96,72 @@ public class EmailServiceController : ControllerBase
 
 
         [HttpPost]
+        public async Task<EmailService.Response> SendEmailWithAttachment(emails _emails)
+        {
+          
+            try
+            {
+            
+            string Email = _config["Email"];
+            string Password = _config["Password"];
+
+            MailMessage msg = new MailMessage();
+
+            msg.From = new MailAddress(Email);
+            msg.To.Add(_emails.Address);
+            msg.Subject = _emails.Title;
+            msg.Body = _emails.Body;
+            //msg.Priority = MailPriority.High;
+
+              System.Net.Mail.Attachment attachment;
+              attachment = new System.Net.Mail.Attachment(_emails.Attachment);
+              msg.Attachments.Add(attachment);
+
+
+            using (SmtpClient client = new SmtpClient())
+            {
+                client.EnableSsl = true;
+                client.UseDefaultCredentials = false;
+                client.Credentials = new NetworkCredential(Email,Password);
+                client.Host =  _config["Host"];
+                client.Port = Convert.ToInt16(_config["Port"]);
+                client.DeliveryMethod = SmtpDeliveryMethod.Network;
+
+                client.Send(msg);
+            }
+
+          
+             var newuser = new {
+               
+                title = _emails.Title,
+                body = _emails.Body,
+                address = _emails.Address
+             
+            };
+            var contract = new Query("emails").Insert(newuser).Contract();
+
+            //direct db calling
+           //var dbresult = await new Query("emails").Insert(newuser).ExecuteAsync(_db);
+            //direct test 
+          /*   var result = await _db.AddAsync(new CreateRequest{
+                 table ="users",
+                 data = parameters
+             });
+             */
+            
+           
+            var result = await _client.GetResponse<ResultData>(contract);
+            var data = result.Message.response.rows.toList<emails>();
+            return   (Response)result.Message.response;
+            }
+            catch (IOException e)
+            {
+                throw;
+            }
+        
+        }
+
+        [HttpPost]
         public async Task<EmailService.Response> MultiSendEmail(emails _emails)
         {
           
